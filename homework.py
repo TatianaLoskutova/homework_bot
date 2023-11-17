@@ -59,8 +59,12 @@ def check_tokens():
     }
     for key, value in tokens.items():
         if not value:
-            logging.critical(f'Отсутствуют необходимые переменные окружения: {key}')
-            raise EnvironmentError(f'Отсутствуют необходимые переменные окружения: {key}')
+            logging.critical(
+                f'Отсутствуют необходимые переменные окружения: {key}'
+            )
+            raise EnvironmentError(
+                f'Отсутствуют необходимые переменные окружения: {key}'
+            )
     return True
 
 
@@ -86,8 +90,11 @@ def get_api_answer(timestamp):
             params=PAYLOAD,
         )
         if homework_statuses.status_code != 200:
-            logger.error(f'Ошибка при запросе к API')
-            raise APIRequestsError(homework_statuses.status_code, 'Ошибка при запросе к API')
+            logger.error('Ошибка при запросе к API')
+            raise APIRequestsError(
+                homework_statuses.status_code,
+                'Ошибка при запросе к API',
+            )
         return homework_statuses.json()
     except requests.RequestException as error:
         logger.error(f'Ошибка при запросе к API: {error}')
