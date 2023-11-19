@@ -108,7 +108,9 @@ def check_response(response):
         logger.error('Полученная структура данных не словарь.')
         raise TypeError('Полученная структура данных не словарь.')
     if 'homeworks' not in response:
-        raise MissingHomeworksKeyError('Отсутствует ключ "homeworks" в ответе API.')
+        raise MissingHomeworksKeyError(
+            'Отсутствует ключ "homeworks" в ответе API.'
+        )
     if not isinstance(response['homeworks'], list):
         logger.error('Полученная структура данных не список.')
         raise TypeError('Полученная структура данных не список.')
@@ -118,7 +120,9 @@ def check_response(response):
             raise IndexError('Полученный список домашних заданий пуст.')
         return response['homeworks'][0]
     except KeyError:
-        raise MissingHomeworksKeyError('Отсутствует ключ "homeworks" в ответе API')
+        raise MissingHomeworksKeyError(
+            'Отсутствует ключ "homeworks" в ответе API.'
+        )
 
 
 def parse_status(homework):
@@ -144,10 +148,10 @@ def main():
 
     if not check_tokens():
         logging.critical(
-            f'Отсутствуют необходимые переменные окружения'
+            'Отсутствуют необходимые переменные окружения'
         )
         raise EnvironmentError(
-            f'Отсутствуют необходимые переменные окружения'
+            'Отсутствуют необходимые переменные окружения'
         )
     else:
         bot = telegram.Bot(token=TELEGRAM_TOKEN)
