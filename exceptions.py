@@ -18,5 +18,11 @@ class MissingHomeworksKeyError(Exception):
     pass
 
 
+class CustomTelegramError(Exception):
+    """Исключение при ошибке при отправке сообщения в Телеграм"""
+    pass
+
+
 class APIResponseError(Exception):
+    """Ошибка при разборе JSON"""
     pass

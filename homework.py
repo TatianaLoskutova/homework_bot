@@ -4,17 +4,18 @@ import logging
 import os
 import sys
 import time
+
 import requests
 import telegram
-
 from dotenv import load_dotenv
-from telegram import TelegramError
+
 from exceptions import (
     APIRequestsError,
-    UnknownHomeworkStatusError,
-    UnknownHomeworkNameError,
-    MissingHomeworksKeyError,
     APIResponseError,
+    MissingHomeworksKeyError,
+    UnknownHomeworkNameError,
+    UnknownHomeworkStatusError,
+    CustomTelegramError,
 )
 
 load_dotenv()
@@ -50,7 +51,7 @@ def check_tokens():
         'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
         'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID,
     }
-    for key, value in tokens.items():
+    for value in tokens.values():
         if not value:
             return False
     return True
@@ -59,23 +60,16 @@ def check_tokens():
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
     timestamp = int(time.time())
-    initial_timestamp = timestamp
     try:
         response = bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logger.debug('Сообщение успешно отправлено в Telegram')
-        if not response:
-            raise TelegramError('Сообщение не отправлено в Телеграм')
-            return False
-        else:
-            logger.debug('Сообщение успешно отправлено в Телеграм')
-            return True
-    except TelegramError as error:
+    except telegram.error.TelegramError as error:
         logger.error(error)
-        timestamp = initial_timestamp
-        return False
-    except Exception as error:
-        logger.error(f'Ошибка при отправке сообщения в Телеграм: {error}')
-        return False
+        raise CustomTelegramError('Ошибка при отправке сообщения в Телеграм')
+    except CustomTelegramError as error:
+        logger.error(error)
+
+    return timestamp
 
 
 def get_api_answer(timestamp):
@@ -92,14 +86,14 @@ def get_api_answer(timestamp):
                 homework_statuses.status_code,
                 'Ошибка при запросе к API',
             )
-        try:
-            return homework_statuses.json()
-        except json.JSONDecodeError as json_error:
-            logger.error(f'Ошибка при разборе JSON: {json_error}')
+        return homework_statuses.json()
+    except (requests.RequestException, json.JSONDecodeError) as error:
+        if isinstance(error, requests.RequestException):
+            logger.error(f'Ошибка при запросе к API: {error}')
+            raise APIRequestsError(f'Ошибка при запросе к API: {error}')
+        elif isinstance(error, json.JSONDecodeError):
+            logger.error(f'Ошибка при разборе JSON: {error}')
             raise APIResponseError('Ошибка при разборе JSON')
-    except requests.RequestException as error:
-        logger.error(f'Ошибка при запросе к API: {error}')
-        raise APIRequestsError(f'Ошибка при запросе к API: {error}')
 
 
 def check_response(response):
@@ -114,15 +108,7 @@ def check_response(response):
     if not isinstance(response['homeworks'], list):
         logger.error('Полученная структура данных не список.')
         raise TypeError('Полученная структура данных не список.')
-
-    try:
-        if not response['homeworks']:
-            raise IndexError('Полученный список домашних заданий пуст.')
-        return response['homeworks'][0]
-    except KeyError:
-        raise MissingHomeworksKeyError(
-            'Отсутствует ключ "homeworks" в ответе API.'
-        )
+    return response['homeworks'][0]
 
 
 def parse_status(homework):
