@@ -61,7 +61,7 @@ def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
     timestamp = int(time.time())
     try:
-        response = bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logger.debug('Сообщение успешно отправлено в Telegram')
     except telegram.error.TelegramError as error:
         logger.error(error)
