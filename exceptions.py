@@ -14,15 +14,15 @@ class UnknownHomeworkNameError(Exception):
 
 
 class MissingHomeworksKeyError(Exception):
-    """Исключение, вызываемое при отсутствии ключа 'homeworks' в ответе API"""
+    """Исключение, вызываемое при отсутствии ключа 'homeworks' в ответе API."""
     pass
 
 
-class CustomTelegramError(Exception):
-    """Исключение при ошибке при отправке сообщения в Телеграм"""
+class TelegramError(Exception):
+    """Исключение при ошибке при отправке сообщения в Телеграм."""
     pass
 
 
 class APIResponseError(Exception):
-    """Ошибка при разборе JSON"""
+    """Ошибка при разборе JSON."""
     pass

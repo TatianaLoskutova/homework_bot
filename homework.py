@@ -15,7 +15,7 @@ from exceptions import (
     MissingHomeworksKeyError,
     UnknownHomeworkNameError,
     UnknownHomeworkStatusError,
-    CustomTelegramError,
+    TelegramError,
 )
 
 load_dotenv()
@@ -59,17 +59,12 @@ def check_tokens():
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
-    timestamp = int(time.time())
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logger.debug('Сообщение успешно отправлено в Telegram')
     except telegram.error.TelegramError as error:
         logger.error(error)
-        raise CustomTelegramError('Ошибка при отправке сообщения в Телеграм')
-    except CustomTelegramError as error:
-        logger.error(error)
-
-    return timestamp
+        raise TelegramError('Ошибка при отправке сообщения в Телеграм')
 
 
 def get_api_answer(timestamp):
@@ -87,13 +82,12 @@ def get_api_answer(timestamp):
                 'Ошибка при запросе к API',
             )
         return homework_statuses.json()
-    except (requests.RequestException, json.JSONDecodeError) as error:
-        if isinstance(error, requests.RequestException):
-            logger.error(f'Ошибка при запросе к API: {error}')
-            raise APIRequestsError(f'Ошибка при запросе к API: {error}')
-        elif isinstance(error, json.JSONDecodeError):
-            logger.error(f'Ошибка при разборе JSON: {error}')
-            raise APIResponseError('Ошибка при разборе JSON')
+    except requests.RequestException as request_error:
+        logger.error(f'Ошибка при запросе к API: {request_error}')
+        raise APIRequestsError(f'Ошибка при запросе к API: {request_error}')
+    except json.JSONDecodeError as json_error:
+        logger.error(f'Ошибка при разборе JSON: {json_error}')
+        raise APIResponseError('Ошибка при разборе JSON')
 
 
 def check_response(response):
@@ -139,15 +133,14 @@ def main():
         raise EnvironmentError(
             'Отсутствуют необходимые переменные окружения'
         )
-    else:
-        bot = telegram.Bot(token=TELEGRAM_TOKEN)
-        timestamp = int(time.time())
-        initial_timestamp = timestamp
-        errors_dict = {'error': None}
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    timestamp = int(time.time())
+    initial_timestamp = timestamp - 2000
+    errors_dict = {'error': None}
 
     while True:
         try:
-            api_response = get_api_answer(timestamp)
+            api_response = get_api_answer(initial_timestamp)
             check_response(api_response)
             homework = api_response['homeworks']
             if not homework:
@@ -168,7 +161,9 @@ def main():
                 logger.error(message)
                 send_message(bot, message)
             errors_dict['error'] = message
-            timestamp = initial_timestamp
+        except TelegramError as telegram_error:
+            logger.error(f'Ошибка в отправке сообщения в Телеграм: {telegram_error}')
+            pass
         finally:
             time.sleep(RETRY_PERIOD)
 
