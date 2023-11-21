@@ -162,7 +162,9 @@ def main():
                 send_message(bot, message)
             errors_dict['error'] = message
         except TelegramError as telegram_error:
-            logger.error(f'Ошибка в отправке сообщения в Телеграм: {telegram_error}')
+            logger.error(
+                f'Ошибка в отправке сообщения в Телеграм: {telegram_error}'
+            )
             pass
         finally:
             time.sleep(RETRY_PERIOD)
